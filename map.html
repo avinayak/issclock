@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<meta charset="utf-8">
+<style>
+
+.country {
+	fill: #ded;
+}
+
+</style>
+<body>
+<script src="//d3js.org/d3.v3.min.js" charset="utf-8"></script></script>
+<script src="//d3js.org/topojson.v1.min.js"></script>
+<script src="//cdnjs.cloudflare.com/ajax/libs/jquery/3.0.0/jquery.min.js" type="text/javascript"></script>
+<script src="js/satellite.min.js" type="text/javascript"></script>
+<script src="js/SunriseSunset.js" type="text/javascript"></script>
+<script>
+
+var width = 960,
+    height = 500;
+var tleLine1 = '1 25544U 98067A   16167.17503470  .00003196  00000-0  54644-4 0  9994',
+    tleLine2 = '2 25544  51.6428  68.0694 0000324   5.0932 150.3291 15.54558788  4673';
+var satrec = satellite.twoline2satrec(tleLine1, tleLine2);
+var issloc=[]
+var projection = d3.geo.mercator()
+    .scale(120,120)
+    .rotate([-11,0]);
+
+var path = d3.geo.path()
+    .projection(projection);
+
+var svg = d3.select("body").append("svg")
+    .attr("width", width)
+    .attr("height", height);
+
+
+d3.json("json/world-110m2.json", function(error, world) {
+  svg.append("path")
+      .datum(topojson.feature(world, world.objects.countries))
+      .attr("class", function(d) { return "country" })
+      .attr("d", path);
+  moveISS ();
+});
+
+
+function getLocAtTime (now) {
+   	var positionAndVelocity = satellite.propagate(
+  	        satrec,
+  	        now.getUTCFullYear(),
+  	        now.getUTCMonth() + 1, // Note, this function requires months in range 1-12.
+  	        now.getUTCDate(),
+  	        now.getUTCHours(),
+  	        now.getUTCMinutes(),
+  	        now.getUTCSeconds()
+  	    );
+  	var positionEci = positionAndVelocity.position,velocityEci = positionAndVelocity.velocity;
+  	var gmst = satellite.gstimeFromDate(
+  	        now.getUTCFullYear(),
+  	        now.getUTCMonth() + 1, // Note, this function requires months in range 1-12.
+  	        now.getUTCDate(),
+  	        now.getUTCHours(),
+  	        now.getUTCMinutes(),
+  	        now.getUTCSeconds()
+  	    );
+  	var positionEcf = satellite.eciToEcf(positionEci, gmst),
+  	positionGd  = satellite.eciToGeodetic(positionEci, gmst);
+	var longitude = positionGd.longitude,
+		        latitude = positionGd.latitude,
+		        height = positionGd.height;
+		var longitudeStr = satellite.degreesLong(longitude),
+		        latitudeStr  = satellite.degreesLat(latitude);
+	return [longitudeStr,latitudeStr]
+}
+
+function setTrailPoints () {
+	var now = new Date();
+	issloc=[]
+	now.setMinutes(now.getMinutes()+90);
+	for (var i = 0; i < 180; i++) {
+		issloc.push(getLocAtTime(now));
+		now.setMinutes(now.getMinutes()-1);
+	};
+}
+
+function moveISS () {
+	svg.selectAll("circle").remove();
+	setTrailPoints ()
+	var now = new Date();
+	var loc = getLocAtTime(now)
+	  svg.selectAll("circle-trail")
+	  		.data(issloc).enter()
+	  		.append("circle")
+	  		.attr("cx", function (d) { return projection(d)[0]; })
+	  		.attr("cy", function (d) { return projection(d)[1]; })
+	  		.attr("r", "1px")
+	  		.attr("fill", "black");
+	  svg.selectAll("circle-iss")
+	  		.data([loc]).enter()
+	  		.append("circle")
+	  		.attr("cx", function (d) { return projection(d)[0]; })
+	  		.attr("cy", function (d) { return projection(d)[1]; })
+	  		.attr("r", "3px")
+	  		.attr("fill", "black");
+    setTimeout(moveISS, 6000); 
+}
+
+</script>
