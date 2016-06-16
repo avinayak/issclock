@@ -319,8 +319,8 @@ var SunriseSunsetLayer = (function(){
 
         destroy:function(){
             this.update(false);
-            if(this.shadow) this.shadow.setMap(null);
-            this.shadow = null;
+            if(shadow) shadow.setMap(null);
+            shadow = null;
             this.map = null;
             this.dayLight = null;
             this.eFunction = null;
@@ -416,7 +416,7 @@ var SunriseSunsetLayer = (function(){
             lEquator = new SunriseSunset( y , m , d , 0 , 0 ),
             lSouth = new SunriseSunset( y , m , d , lMin , 0 );
             
-            this.shadowAlone = true;
+            var shadowAlone = true;
 
             var
             dln = lNorth.sunsetUtcHours() - lNorth.sunriseUtcHours(),
@@ -424,7 +424,7 @@ var SunriseSunsetLayer = (function(){
             dls = lSouth.sunsetUtcHours() - lSouth.sunriseUtcHours();
             
             // reverse drawing
-            if(lNorth.sunriseUtcHours()<lEquator.sunriseUtcHours() && lEquator.sunriseUtcHours()<lSouth.sunriseUtcHours()) this.shadowAlone = false;
+            if(lNorth.sunriseUtcHours()<lEquator.sunriseUtcHours() && lEquator.sunriseUtcHours()<lSouth.sunriseUtcHours()) shadowAlone = false;
         },
 
         draw:function() {
@@ -439,24 +439,26 @@ var SunriseSunsetLayer = (function(){
             offset = (hUtc+(mUtc*MINUTES_TO_HOURS)+(sUtc*SECONDS_TO_HOURS))*HOURS_TO_GRADS,
             n = DEFINITION,
             dn = n-1;
-
+            var shadow=[];
+            var shadowAlone=true;
             while (n--){
-                this.shadow[dn-n] = [this.dayLight[n].l , this.dayLight[n].sunrise - offset ];
-                this.shadow[dn+n] = [ this.dayLight[n].l , this.dayLight[n].sunset  - offset ];
+                shadow[dn-n] = [ this.dayLight[n].sunrise - offset,this.dayLight[n].l ];
+                shadow[dn+n] = [ this.dayLight[n].sunset  - offset, this.dayLight[n].l ];
             }
  
             // DRAW SUN SHADOW
-            if (this.shadow)
+            if (shadow)
                 {
-                var options = { paths: this.shadowAlone?[shadow]:[this.all,shadow] }
-                this.shadow.setOptions(options);
+                var options = { paths: shadowAlone?[shadow]:[this.all,shadow] }
+                return shadow;
+                //shadow.setOptions(options);
                 }
             else
                 {
                 //TODO: weew
-                // this.shadow = new google.maps.Polygon({zIndex:10 , paths:this.shadowAlone?[shadow]:[this.all,shadow] ,strokeWeight:0 , fillColor:"#000000" , fillOpacity:0.35 , geodesic:true });
-                // this.shadow.myData = this;
-                // this.shadow.setMap(this.map);
+                // shadow = new google.maps.Polygon({zIndex:10 , paths:shadowAlone?[shadow]:[this.all,shadow] ,strokeWeight:0 , fillColor:"#000000" , fillOpacity:0.35 , geodesic:true });
+                // shadow.myData = this;
+                // shadow.setMap(this.map);
                 
                 
                 // todo >>> triger movement events in the map !!!!!!!!
