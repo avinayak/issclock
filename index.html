@@ -32,7 +32,7 @@
   </body>
   <script>
 
-  var width = 121,height = 100;
+  var width = 131,height = 100;
   var tleLine1 = '1 25544U 98067A   16167.17503470  .00003196  00000-0  54644-4 0  9994',
       tleLine2 = '2 25544  51.6428  68.0694 0000324   5.0932 150.3291 15.54558788  4673';
   var satrec = satellite.twoline2satrec(tleLine1, tleLine2);
@@ -41,7 +41,7 @@
   var loc;
   var projection = d3.geo.mercator()
       .scale(20)
-      .translate([60,70])
+      .translate([70,70])
       .rotate([0,0]);
 
   var path = d3.geo.path()
