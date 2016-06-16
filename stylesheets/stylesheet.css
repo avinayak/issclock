@@ -15,10 +15,21 @@ body {
 #time{
   position: absolute;
   bottom: 0px;
-  left: 0px;
+  left: 5px;
 
 }
 
 #livestream{
   z-index: 0;
+}
+
+.country {
+  fill: #eee;
+  opacity: 0.1
+}
+
+#map{
+  background-color: #000;
+  opacity: 0.7;
+  border-radius:4px;
 }

@@ -288,7 +288,7 @@ var SunriseSunsetLayer = (function(){
     MINUTES_TO_HOURS = 1/60,
     SECONDS_TO_HOURS = 1/3600,
     HOURS_TO_GRADS = 360/24,
-    DEFINITION = 100;
+    DEFINITION = 200;
 
 
     // CONSTRUCTOR -------------------------------------------------------------
@@ -298,7 +298,7 @@ var SunriseSunsetLayer = (function(){
         this.dayLight = [];
         this.dayLightInterval = undefined;
         this.eFunction = { draw:this.draw.bind(this) };
-
+        this.shadowAlone=false;
         
         this.all = [
             [ 90 , 0  ],
@@ -309,14 +309,12 @@ var SunriseSunsetLayer = (function(){
             [ 90 , -180  ],
         ];
 
-        
-        this.calculateLightAreaCoordinates();
+    
     }
     
 
     // PROTOTYPE ---------------------------------------------------------------
     SunriseSunsetLayer.prototype = {
-
         destroy:function(){
             this.update(false);
             if(shadow) shadow.setMap(null);
@@ -349,12 +347,9 @@ var SunriseSunsetLayer = (function(){
             }            
         },
 
-        calculateLightAreaCoordinates:function() {
+        calculateLightAreaCoordinates:function(now) {
         
-            var
-            now = new Date(),
-            
-            y = now.getFullYear(),
+            var y = now.getFullYear(),
             m = now.getMonth()+1,
             d = now.getDate(),
             
@@ -416,7 +411,6 @@ var SunriseSunsetLayer = (function(){
             lEquator = new SunriseSunset( y , m , d , 0 , 0 ),
             lSouth = new SunriseSunset( y , m , d , lMin , 0 );
             
-            var shadowAlone = true;
 
             var
             dln = lNorth.sunsetUtcHours() - lNorth.sunriseUtcHours(),
@@ -424,23 +418,21 @@ var SunriseSunsetLayer = (function(){
             dls = lSouth.sunsetUtcHours() - lSouth.sunriseUtcHours();
             
             // reverse drawing
-            if(lNorth.sunriseUtcHours()<lEquator.sunriseUtcHours() && lEquator.sunriseUtcHours()<lSouth.sunriseUtcHours()) shadowAlone = false;
+            if(lNorth.sunriseUtcHours()<lEquator.sunriseUtcHours() && lEquator.sunriseUtcHours()<lSouth.sunriseUtcHours()) this.shadowAlone = false;
+            else this.shadowAlone=true;
         },
 
-        draw:function() {
+        draw:function(now) {
 
             // 2014.03.23 < error -- day is where night is...
-        
-            var
-            now = new Date(),
-            hUtc = now.getUTCHours(),
+            this.calculateLightAreaCoordinates(now);
+            var hUtc = now.getUTCHours(),
             mUtc = now.getUTCMinutes(),
             sUtc = now.getUTCSeconds(),
             offset = (hUtc+(mUtc*MINUTES_TO_HOURS)+(sUtc*SECONDS_TO_HOURS))*HOURS_TO_GRADS,
             n = DEFINITION,
             dn = n-1;
             var shadow=[];
-            var shadowAlone=true;
             while (n--){
                 shadow[dn-n] = [ this.dayLight[n].sunrise - offset,this.dayLight[n].l ];
                 shadow[dn+n] = [ this.dayLight[n].sunset  - offset, this.dayLight[n].l ];
@@ -449,14 +441,14 @@ var SunriseSunsetLayer = (function(){
             // DRAW SUN SHADOW
             if (shadow)
                 {
-                var options = { paths: shadowAlone?[shadow]:[this.all,shadow] }
-                return shadow;
+
+                return {shadow:shadow,shadowAlone:this.shadowAlone};
                 //shadow.setOptions(options);
                 }
             else
                 {
                 //TODO: weew
-                // shadow = new google.maps.Polygon({zIndex:10 , paths:shadowAlone?[shadow]:[this.all,shadow] ,strokeWeight:0 , fillColor:"#000000" , fillOpacity:0.35 , geodesic:true });
+                // shadow = new google.maps.Polygon({zIndex:10 , paths:this.shadowAlone?[shadow]:[this.all,shadow] ,strokeWeight:0 , fillColor:"#000000" , fillOpacity:0.35 , geodesic:true });
                 // shadow.myData = this;
                 // shadow.setMap(this.map);
                 

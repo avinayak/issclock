@@ -3,7 +3,7 @@
 <style>
 
 .country {
-	fill: #555;
+	fill: #eee;
 }
 
 
@@ -87,22 +87,30 @@ var lineFunction = d3.svg.line()
   .y(function(d) { return projection([d.x,d.y])[1]; })
   .interpolate("linear");
 
+var now = new Date();
+
+function get_time() {
+  now.setMinutes(now.getMinutes()+60);
+  return now;
+}
+
 function moveISS () {
 	svg.selectAll("circle").remove();
   svg.selectAll(".circle-iss").remove();
   svg.selectAll(".shadow").remove();
 	setTrailPoints ();
-	var now = new Date();
-	var loc = getLocAtTime(now);
-    var shadow=new SunriseSunsetLayer();
-    var shadow_shape=shadow.draw().map(function(d){return {'x':d[0],'y':d[1],'p':projection(d) }; });
-    for (var i = shadow_shape.length - 1; i >= 0; i--) {
-      console.log(shadow_shape[i].p);
-    }
-    shadow_shape.splice(106,0,{x:shadow_shape[106].x,y:-80});
-    shadow_shape.splice(106,0,{x:shadow_shape[105].x,y:-80});
-    //shadow_shape.unshift();
-    //shadow_shape.push({x:180,y:64}); 
+	//var now = new Date();
+
+	var loc = getLocAtTime(get_time());
+    var shape=new SunriseSunsetLayer().draw(get_time());
+    var shadow_shape=shape.shadow.map(function(d){return {'x':d[0],'y':d[1],'p':projection(d) }; });
+
+    shadow_shape.sort(function(a,b) {
+      return a.p[0]-b.p[0];
+    });
+
+    shadow_shape.splice(0,0,{x:shadow_shape[0].x,y: (function() { if(shape.shadowAlone)return 1;else return -1 })()* 89});
+    shadow_shape.splice(shadow_shape.length,0,{x:shadow_shape[shadow_shape.length-1].x,y: (function() { if(shape.shadowAlone)return 1;else return -1 })()*89});
 
     svg.append("path") 
     .attr("d", lineFunction(shadow_shape))
@@ -124,7 +132,7 @@ function moveISS () {
         .attr("class","circle-iss")
 	  		.attr("transform", function(d) { return "translate(" + projection(d)[0] + "," + projection(d)[1] + ")"; })
         .attr("d", d3.svg.symbol());
-    setTimeout(moveISS, 6000); 
+    setTimeout(moveISS, 1000); 
 }
 
 </script>
