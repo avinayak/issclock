@@ -20,18 +20,25 @@
    <div id="livestream" style="padding-bottom:56.25%; position:relative; display:block; width: 100%">
       <iframe id="UstreamIframe" width="100%" height="100%" src="http://www.ustream.tv/embed/17074538?autoplay=true&controls=false&html5ui=1&quality=hd" scrolling="no" allowfullscreen webkitallowfullscreen frameborder="0"  style="position:absolute; top:0; left: 0;border: 0 none transparent;"></iframe>
     </div>
-    <div id="time">
-      <!-- hello -->
+    <div id="box">
+      <span id="data">
+          <div id="date"></div>
+          <div id="time"></div>
+          <div id="lat"></div>
+          <div id="lng"></div>
+          <div id="loc"></div>
+      </span>
     </div>
   </body>
   <script>
 
-  var width = 121,
-      height = 100;
+  var width = 121,height = 100;
   var tleLine1 = '1 25544U 98067A   16167.17503470  .00003196  00000-0  54644-4 0  9994',
       tleLine2 = '2 25544  51.6428  68.0694 0000324   5.0932 150.3291 15.54558788  4673';
   var satrec = satellite.twoline2satrec(tleLine1, tleLine2);
+  var month = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
   var issloc=[];
+  var loc;
   var projection = d3.geo.mercator()
       .scale(20)
       .translate([60,70])
@@ -40,11 +47,10 @@
   var path = d3.geo.path()
       .projection(projection);
 
-  var svg = d3.select("#time").append("svg")
+  var svg = d3.select("#box").append("svg")
       .attr("id","map")
       .attr("width", width)
       .attr("height", height);
-
 
   d3.json("json/world-110m2.json", function(error, world) {
     svg.append("path")
@@ -52,8 +58,34 @@
         .attr("class", function(d) { return "country"; })
         .attr("d", path);
     moveISS ();
+    timeUpdater();
   });
 
+  function timeUpdater () {
+    var t=formatAMPM(get_time());
+    //console.log(t)
+    $("#date").text(t[0]);
+    $("#time").text(t[1]);
+    setTimeout(timeUpdater, 1000); 
+
+  }
+
+  function formatAMPM(date) {
+    var hours = date.getHours();
+    var minutes = date.getMinutes();
+    var seconds = date.getSeconds();
+    var ampm = hours >= 12 ? 'PM' : 'AM';
+    hours = hours % 12;
+    hours = hours ? hours : 12; // the hour '0' should be '12'
+    minutes = minutes < 10 ? '0'+minutes : minutes;
+    var strTime = leftPad(hours,2) + ':' + leftPad(minutes,2) +":"+leftPad(seconds,2)+ ' ' + ampm;
+    var date_str = leftPad(date.getDay(),2) + " " + month[date.getMonth()] + " " + date.getFullYear();
+    return [date_str, strTime];
+  }
+
+  function leftPad(value, length) {
+    return (value.toString().length < length) ? leftPad("0"+value, length):value;
+  }
 
   function getLocAtTime (now) {
       var positionAndVelocity = satellite.propagate(
@@ -99,8 +131,6 @@
     .y(function(d) { return projection([d.x,d.y])[1]; })
     .interpolate("linear");
 
-  //var now = new Date();
-
   function get_time() {
     var now = new Date();
     // now.setMinutes(now.getMinutes()+60);
@@ -114,41 +144,48 @@
     setTrailPoints ();
     //var now = new Date();
 
-    var loc = getLocAtTime(get_time());
-      var shape=new SunriseSunsetLayer().draw(get_time());
-      var shadow_shape=shape.shadow.map(function(d){return {'x':d[0],'y':d[1],'p':projection(d) }; });
+    loc = getLocAtTime(get_time());
+    $("#lat").text("lat: "+loc[0].toFixed(8));
+    $("#lng").text("lng: "+loc[1].toFixed(8));
 
-      shadow_shape.sort(function(a,b) {
-        return a.p[0]-b.p[0];
-      });
+    $.get('http://maps.googleapis.com/maps/api/geocode/json?latlng='+loc[1]+","+loc[0]+'&sensor=true',function(data){
+        console.log(data);
+        if(data.status!=='ZERO_RESULTS')
+            $("#loc").text(data.results[0] .formatted_address)
+        else
+            $("#loc").text('Location Unknown')
+    })
 
-      shadow_shape.splice(0,0,{x:shadow_shape[0].x,y: (function() { if(shape.shadowAlone)return -1;else return 1 })()* 89});
-      shadow_shape.splice(shadow_shape.length,0,{x:shadow_shape[shadow_shape.length-1].x,y: (function() { if(shape.shadowAlone)return -1;else return 1 })()*89});
-
-      svg.append("path") 
-      .attr("d", lineFunction(shadow_shape))
-      .attr("stroke", "none")
-      .attr("fill", "#fff")
-      .attr("fill-opacity", 0.1)
-      .attr("class","shadow");
-
-      svg.selectAll("circle-trail")
-          .data(issloc).enter()
-          .append("circle")
-          .attr("cx", function (d) { return projection(d)[0]; })
-          .attr("cy", function (d) { return projection(d)[1]; })
-          .attr("r", "1px")
-          .attr("fill", "#fff")
-          .attr("fill-opacity", 0.5);
-      svg.selectAll("circle-iss")
-          .data([loc]).enter()
-          .append("circle")
-          .attr("cx", function (d) { return projection(d)[0]; })
-          .attr("cy", function (d) { return projection(d)[1]; })
-          .attr("r", "2px")
-          .attr("fill", "#fff")
-          .attr("fill-opacity", 0.8);
-      setTimeout(moveISS, 6000); 
+    var shape=new SunriseSunsetLayer().draw(get_time());
+    var shadow_shape=shape.shadow.map(function(d){return {'x':d[0],'y':d[1],'p':projection(d) }; });
+    shadow_shape.sort(function(a,b) {
+      return a.p[0]-b.p[0];
+    });
+    shadow_shape.splice(0,0,{x:shadow_shape[0].x,y: (function() { if(shape.shadowAlone)return -1;else return 1 })()* 89});
+    shadow_shape.splice(shadow_shape.length,0,{x:shadow_shape[shadow_shape.length-1].x,y: (function() { if(shape.shadowAlone)return -1;else return 1 })()*89});
+    svg.append("path") 
+    .attr("d", lineFunction(shadow_shape))
+    .attr("stroke", "none")
+    .attr("fill", "#fff")
+    .attr("fill-opacity", 0.1)
+    .attr("class","shadow");
+    svg.selectAll("circle-trail")
+        .data(issloc).enter()
+        .append("circle")
+        .attr("cx", function (d) { return projection(d)[0]; })
+        .attr("cy", function (d) { return projection(d)[1]; })
+        .attr("r", "1px")
+        .attr("fill", "#fff")
+        .attr("fill-opacity", 0.5);
+    svg.selectAll("circle-iss")
+        .data([loc]).enter()
+        .append("circle")
+        .attr("cx", function (d) { return projection(d)[0]; })
+        .attr("cy", function (d) { return projection(d)[1]; })
+        .attr("r", "2px")
+        .attr("fill", "#fff")
+        .attr("fill-opacity", 0.8);
+    setTimeout(moveISS, 6000); 
   }
 
   </script>
