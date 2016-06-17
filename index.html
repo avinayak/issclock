@@ -17,8 +17,24 @@
    
   </head>
   <body>
-   <div id="livestream" style="padding-bottom:56.25%; position:relative; display:block; width: 100%">
-      <iframe id="UstreamIframe" width="100%" height="100%" src="http://www.ustream.tv/embed/17074538?autoplay=true&controls=false&html5ui=1&quality=hd" scrolling="no" allowfullscreen webkitallowfullscreen frameborder="0"  style="position:absolute; top:0; left: 0;border: 0 none transparent;"></iframe>
+    <div id="livestream" style="padding-bottom:56.25%; position:relative; display:block; width: 100%"></div>
+    <div id="controls">
+      <span onclick="toggleStream()"><svg class="icon"  fill="#FFFFFF" height="24" viewBox="0 0 24 24" width="24" xmlns="http://www.w3.org/2000/svg">
+      <path d="M0 0h24v24H0z" fill="none"/>
+      <path d="M18 9.5V6c0-.55-.45-1-1-1H3c-.55 0-1 .45-1 1v12c0 .55.45 1 1 1h14c.55 0 1-.45 1-1v-3.5l4 4v-13l-4 4zm-5 6V13H7v2.5L3.5 12 7 8.5V11h6V8.5l3.5 3.5-3.5 3.5z"/>
+      </svg>
+    </span>
+<!--       <span onclick='toggleFullScreen(document.body)'>
+        <svg class="icon" id="fs-icon" fill="#FFFFFF" height="24" viewBox="0 0 24 24" width="24" xmlns="http://www.w3.org/2000/svg">
+            <path d="M0 0h24v24H0z" fill="none"/>
+            <path d="M7 14H5v5h5v-2H7v-3zm-2-4h2V7h3V5H5v5zm12 7h-3v2h5v-5h-2v3zM14 5v2h3v3h2V5h-5z"/>
+        </svg>
+    </span> -->
+    </span>
+      <span><svg id="pin-icon"  version="1.1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" fill="#FFFFFF" x="0px" y="0px" viewBox="0 0 1000 1000" enable-background="new 0 0 1000 1000" xml:space="preserve">
+<g><g transform="matrix(1 0 0 -1 0 1008)"><path fill="#ffffff" d="M832.5,540.1L940.4,648L640,948.4L532.1,840.5l52.5-52.5L383.3,586.8c-21.4,5.8-43.7,8.8-67.1,8.8c-67.4,0-127-22.4-178.9-67.1l383.1-383.1c44.7,50.6,67.1,110.2,67.1,178.9c0,23.3-2.9,45.7-8.8,67.1L780,592.6L832.5,540.1z M640,998l350-350L832.5,490.5L780,543L617.6,380.6c3.2-20.7,4.9-39.5,4.9-56.4c0-84.3-34-160.4-102.1-228.5L317.2,299c-46.7-51.9-101.3-107.8-163.8-167.7C90.9,71.3,43.1,33.6,10,18c26.6,56.4,120.2,158.8,281,307.2L87.8,528.4c68.1,68.1,144.2,102.1,228.5,102.1c16.9,0,35.6-1.6,56.4-4.9L535,788l-52.5,52.5L640,998z"/></g></g>
+</svg>
+    </span>
     </div>
     <div id="box">
       <span id="data">
@@ -38,6 +54,7 @@
   var satrec = satellite.twoline2satrec(tleLine1, tleLine2);
   var month = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
   var issloc=[];
+  var embeds=['<iframe id="UstreamIframe" width="100%" height="100%" src="http://www.ustream.tv/embed/17074538?autoplay=true&controls=false&html5ui=1&quality=hd" scrolling="no" allowfullscreen webkitallowfullscreen frameborder="0"  style="position:absolute; top:0; left: 0;border: 0 none transparent;"></iframe>','<iframe id="UstreamIframe" width="100%" height="100%" src="http://www.ustream.tv/embed/9408562?autoplay=true&controls=false&html5ui=1&quality=hd" scrolling="no" allowfullscreen webkitallowfullscreen frameborder="0"  style="position:absolute; top:0; left: 0;border: 0 none transparent;"></iframe>'];
   var loc;
   var projection = d3.geo.mercator()
       .scale(20)
@@ -59,17 +76,48 @@
         .attr("d", path);
     moveISS ();
     timeUpdater();
+    toggleStream();
   });
 
   function timeUpdater () {
     var t=formatAMPM(get_time());
-    //console.log(t)
     $("#date").text(t[0]);
     $("#time").text(t[1]);
     setTimeout(timeUpdater, 1000); 
 
   }
-
+  var streamid=0;
+  function toggleStream(){
+    $('#livestream').empty();
+    $('#livestream').html(embeds[streamid]);
+    streamid=(streamid+1)%(embeds.length);
+  }
+  function toggleFullScreen(elem) {
+      // ## The below if statement seems to work better ## if ((document.fullScreenElement && document.fullScreenElement !== null) || (document.msfullscreenElement && document.msfullscreenElement !== null) || (!document.mozFullScreen && !document.webkitIsFullScreen)) {
+      if ((document.fullScreenElement !== undefined && document.fullScreenElement === null) || (document.msFullscreenElement !== undefined && document.msFullscreenElement === null) || (document.mozFullScreen !== undefined && !document.mozFullScreen) || (document.webkitIsFullScreen !== undefined && !document.webkitIsFullScreen)) {
+          if (elem.requestFullScreen) {
+              elem.requestFullScreen();
+          } else if (elem.mozRequestFullScreen) {
+              elem.mozRequestFullScreen();
+          } else if (elem.webkitRequestFullScreen) {
+              elem.webkitRequestFullScreen(Element.ALLOW_KEYBOARD_INPUT);
+          } else if (elem.msRequestFullscreen) {
+              elem.msRequestFullscreen();
+          }
+      } else {
+          if (document.cancelFullScreen) {
+              document.cancelFullScreen();
+          } else if (document.mozCancelFullScreen) {
+              document.mozCancelFullScreen();
+          } else if (document.webkitCancelFullScreen) {
+              document.webkitCancelFullScreen();
+          } else if (document.msExitFullscreen) {
+              document.msExitFullscreen();
+          }
+      }
+      $('#livestream').empty();
+      $('#livestream').html(embeds[0]);
+  }
   function formatAMPM(date) {
     var hours = date.getHours();
     var minutes = date.getMinutes();
@@ -149,7 +197,7 @@
     $("#lng").text("lng: "+loc[1].toFixed(8));
 
     $.get('http://maps.googleapis.com/maps/api/geocode/json?latlng='+loc[1]+","+loc[0]+'&sensor=true',function(data){
-        console.log(data);
+        //console.log(data);
         if(data.status!=='ZERO_RESULTS')
             $("#loc").text(data.results[0] .formatted_address)
         else
