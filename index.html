@@ -4,6 +4,9 @@
     <meta charset="UTF-8">
     <title>ISS Clock</title>
     <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="mobile-web-app-capable" content="yes">
+
     <link rel="stylesheet" type="text/css" href="stylesheets/stylesheet.css" media="screen">
 
     <script src="//d3js.org/d3.v3.min.js" charset="utf-8"></script></script>
@@ -22,7 +25,7 @@
       <path d="M18 9.5V6c0-.55-.45-1-1-1H3c-.55 0-1 .45-1 1v12c0 .55.45 1 1 1h14c.55 0 1-.45 1-1v-3.5l4 4v-13l-4 4zm-5 6V13H7v2.5L3.5 12 7 8.5V11h6V8.5l3.5 3.5-3.5 3.5z"/>
       </svg>
     </span>
-<!--       <span onclick='toggleFullScreen(document.body)'>
+<!--       <span onclick='toggleFullScreen()'>
         <svg class="icon" id="fs-icon" fill="#FFFFFF" height="24" viewBox="0 0 24 24" width="24" xmlns="http://www.w3.org/2000/svg">
             <path d="M0 0h24v24H0z" fill="none"/>
             <path d="M7 14H5v5h5v-2H7v-3zm-2-4h2V7h3V5H5v5zm12 7h-3v2h5v-5h-2v3zM14 5v2h3v3h2V5h-5z"/>
@@ -88,7 +91,8 @@
         .attr("d", path);
     moveISS ();
     timeUpdater();
-    toggleStream();
+    $('#livestream').empty();
+    $('#livestream').html(embeds[0]);
   });
 
   function timeUpdater () {
@@ -119,36 +123,26 @@
 
   var streamid=0;
   function toggleStream(){
+    streamid=(streamid+1)%(embeds.length);
     $('#livestream').empty();
     $('#livestream').html(embeds[streamid]);
-    streamid=(streamid+1)%(embeds.length);
   }
-  function toggleFullScreen(elem) {
-      // ## The below if statement seems to work better ## if ((document.fullScreenElement && document.fullScreenElement !== null) || (document.msfullscreenElement && document.msfullscreenElement !== null) || (!document.mozFullScreen && !document.webkitIsFullScreen)) {
-      if ((document.fullScreenElement !== undefined && document.fullScreenElement === null) || (document.msFullscreenElement !== undefined && document.msFullscreenElement === null) || (document.mozFullScreen !== undefined && !document.mozFullScreen) || (document.webkitIsFullScreen !== undefined && !document.webkitIsFullScreen)) {
-          if (elem.requestFullScreen) {
-              elem.requestFullScreen();
-          } else if (elem.mozRequestFullScreen) {
-              elem.mozRequestFullScreen();
-          } else if (elem.webkitRequestFullScreen) {
-              elem.webkitRequestFullScreen(Element.ALLOW_KEYBOARD_INPUT);
-          } else if (elem.msRequestFullscreen) {
-              elem.msRequestFullscreen();
-          }
-      } else {
-          if (document.cancelFullScreen) {
-              document.cancelFullScreen();
-          } else if (document.mozCancelFullScreen) {
-              document.mozCancelFullScreen();
-          } else if (document.webkitCancelFullScreen) {
-              document.webkitCancelFullScreen();
-          } else if (document.msExitFullscreen) {
-              document.msExitFullscreen();
-          }
-      }
-      $('#livestream').empty();
-      $('#livestream').html(embeds[0]);
+  function toggleFullScreen() {
+  var doc = window.document;
+  var docEl = doc.documentElement;
+
+  var requestFullScreen = docEl.requestFullscreen || docEl.mozRequestFullScreen || docEl.webkitRequestFullScreen || docEl.msRequestFullscreen;
+  var cancelFullScreen = doc.exitFullscreen || doc.mozCancelFullScreen || doc.webkitExitFullscreen || doc.msExitFullscreen;
+
+  if(!doc.fullscreenElement && !doc.mozFullScreenElement && !doc.webkitFullscreenElement && !doc.msFullscreenElement) {
+    requestFullScreen.call(docEl);
   }
+  else {
+    cancelFullScreen.call(doc);
+  }
+  $('#livestream').empty();
+  $('#livestream').html(embeds[streamid]);
+}
   function formatAMPM(date) {
     var hours = date.getHours();
     var minutes = date.getMinutes();
