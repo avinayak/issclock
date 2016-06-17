@@ -4,10 +4,7 @@
     <meta charset="UTF-8">
     <title>ISS Clock</title>
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <link rel="stylesheet" type="text/css" href="stylesheets/normalize.css" media="screen">
-    <link href='https://fonts.googleapis.com/css?family=Open+Sans:400,700' rel='stylesheet' type='text/css'>
     <link rel="stylesheet" type="text/css" href="stylesheets/stylesheet.css" media="screen">
-    <link rel="stylesheet" type="text/css" href="stylesheets/github-light.css" media="screen">
 
     <script src="//d3js.org/d3.v3.min.js" charset="utf-8"></script></script>
     <script src="//d3js.org/topojson.v1.min.js"></script>
@@ -17,8 +14,9 @@
    
   </head>
   <body>
+    <div id="cover"></div>
     <div id="livestream" style="padding-bottom:56.25%; position:relative; display:block; width: 100%"></div>
-    <div id="controls">
+    <div class="console" id="controls">
       <span onclick="toggleStream()"><svg class="icon"  fill="#FFFFFF" height="24" viewBox="0 0 24 24" width="24" xmlns="http://www.w3.org/2000/svg">
       <path d="M0 0h24v24H0z" fill="none"/>
       <path d="M18 9.5V6c0-.55-.45-1-1-1H3c-.55 0-1 .45-1 1v12c0 .55.45 1 1 1h14c.55 0 1-.45 1-1v-3.5l4 4v-13l-4 4zm-5 6V13H7v2.5L3.5 12 7 8.5V11h6V8.5l3.5 3.5-3.5 3.5z"/>
@@ -31,12 +29,12 @@
         </svg>
     </span> -->
     </span>
-      <span><svg id="pin-icon"  version="1.1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" fill="#FFFFFF" x="0px" y="0px" viewBox="0 0 1000 1000" enable-background="new 0 0 1000 1000" xml:space="preserve">
+      <span onclick="togglePin()"><svg id="pin-icon"  version="1.1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" fill="#FFFFFF" x="0px" y="0px" viewBox="0 0 1000 1000" enable-background="new 0 0 1000 1000" xml:space="preserve">
 <g><g transform="matrix(1 0 0 -1 0 1008)"><path fill="#ffffff" d="M832.5,540.1L940.4,648L640,948.4L532.1,840.5l52.5-52.5L383.3,586.8c-21.4,5.8-43.7,8.8-67.1,8.8c-67.4,0-127-22.4-178.9-67.1l383.1-383.1c44.7,50.6,67.1,110.2,67.1,178.9c0,23.3-2.9,45.7-8.8,67.1L780,592.6L832.5,540.1z M640,998l350-350L832.5,490.5L780,543L617.6,380.6c3.2-20.7,4.9-39.5,4.9-56.4c0-84.3-34-160.4-102.1-228.5L317.2,299c-46.7-51.9-101.3-107.8-163.8-167.7C90.9,71.3,43.1,33.6,10,18c26.6,56.4,120.2,158.8,281,307.2L87.8,528.4c68.1,68.1,144.2,102.1,228.5,102.1c16.9,0,35.6-1.6,56.4-4.9L535,788l-52.5,52.5L640,998z"/></g></g>
 </svg>
     </span>
     </div>
-    <div id="box">
+    <div class="console" id="box">
       <span id="data">
           <div id="date"></div>
           <div id="time"></div>
@@ -49,6 +47,8 @@
   <script>
 
   var width = 131,height = 100;
+  var mouseStopSince=0;
+  var consoleVisible=true;
   var tleLine1 = '1 25544U 98067A   16167.17503470  .00003196  00000-0  54644-4 0  9994',
       tleLine2 = '2 25544  51.6428  68.0694 0000324   5.0932 150.3291 15.54558788  4673';
   var satrec = satellite.twoline2satrec(tleLine1, tleLine2);
@@ -56,6 +56,7 @@
   var issloc=[];
   var embeds=['<iframe id="UstreamIframe" width="100%" height="100%" src="http://www.ustream.tv/embed/17074538?autoplay=true&controls=false&html5ui=1&quality=hd" scrolling="no" allowfullscreen webkitallowfullscreen frameborder="0"  style="position:absolute; top:0; left: 0;border: 0 none transparent;"></iframe>','<iframe id="UstreamIframe" width="100%" height="100%" src="http://www.ustream.tv/embed/9408562?autoplay=true&controls=false&html5ui=1&quality=hd" scrolling="no" allowfullscreen webkitallowfullscreen frameborder="0"  style="position:absolute; top:0; left: 0;border: 0 none transparent;"></iframe>'];
   var loc;
+  var pin=false;
   var projection = d3.geo.mercator()
       .scale(20)
       .translate([70,70])
@@ -68,6 +69,17 @@
       .attr("id","map")
       .attr("width", width)
       .attr("height", height);
+
+  $(document).ready(function(){
+      $(document).mousemove(function(event){
+          mouseStopSince=0;
+          if(!consoleVisible)
+          {
+            $(".console").toggle(true);
+            consoleVisible=true;
+          }
+      });
+  });
 
   d3.json("json/world-110m2.json", function(error, world) {
     svg.append("path")
@@ -83,9 +95,28 @@
     var t=formatAMPM(get_time());
     $("#date").text(t[0]);
     $("#time").text(t[1]);
+
+    
+    if(mouseStopSince>=5){
+      if(pin){
+        $(".console").fadeOut();
+        consoleVisible=false;
+      }
+    }else{
+      mouseStopSince+=1;
+
+    }
     setTimeout(timeUpdater, 1000); 
 
   }
+
+
+  function togglePin(){
+    pin=!pin;
+    if(pin) $("#pin-icon").css({ 'opacity' : .5 });
+    else $("#pin-icon").css({ 'opacity' : 1.0 });
+  }
+
   var streamid=0;
   function toggleStream(){
     $('#livestream').empty();
