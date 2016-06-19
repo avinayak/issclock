@@ -152,7 +152,7 @@
     hours = hours ? hours : 12; // the hour '0' should be '12'
     minutes = minutes < 10 ? '0'+minutes : minutes;
     var strTime = leftPad(hours,2) + ':' + leftPad(minutes,2) +":"+leftPad(seconds,2)+ ' ' + ampm;
-    var date_str = date.getDay() + " " + month[date.getMonth()] + " " + date.getFullYear();
+    var date_str = date.getDate() + " " + month[date.getMonth()] + " " + date.getFullYear();
     return [date_str, strTime];
   }
 
