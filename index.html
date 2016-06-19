@@ -152,7 +152,7 @@
     hours = hours ? hours : 12; // the hour '0' should be '12'
     minutes = minutes < 10 ? '0'+minutes : minutes;
     var strTime = leftPad(hours,2) + ':' + leftPad(minutes,2) +":"+leftPad(seconds,2)+ ' ' + ampm;
-    var date_str = leftPad(date.getDay(),2) + " " + month[date.getMonth()] + " " + date.getFullYear();
+    var date_str = date.getDay() + " " + month[date.getMonth()] + " " + date.getFullYear();
     return [date_str, strTime];
   }
 
@@ -218,8 +218,8 @@
     //var now = new Date();
 
     loc = getLocAtTime(get_time());
-    $("#lat").text("lat: "+loc[0].toFixed(8));
-    $("#lng").text("lng: "+loc[1].toFixed(8));
+    $("#lat").text("lat: "+loc[1].toFixed(8));
+    $("#lng").text("lng: "+loc[0].toFixed(8));
 
     $.get('http://maps.googleapis.com/maps/api/geocode/json?latlng='+loc[1]+","+loc[0]+'&sensor=true',function(data){
         //console.log(data);
